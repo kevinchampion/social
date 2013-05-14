@@ -1,0 +1,812 @@
+<?php
+
+/**
+ * @file Social module functionality.
+ */
+
+
+/**
+ * Implements hook_permission().
+ */
+function social_permission() {
+  // We set up permisssions to manage entity types, manage all entities and the
+  // permissions for each individual entity
+  $permissions = array(
+    'administer social types' => array(
+      'title' => t('Administer social types'),
+      'description' => t('Create and delete fields for social types, and set their permissions.'),
+    ),
+    'create social types' => array(
+      'title' => t('Create social types'),
+      'description' => t('Create new social types.'),
+    ),
+    'administer socials' => array(
+      'title' => t('Administer socials'),
+      'description' => t('Edit and delete all socials'),
+    ),
+  );
+
+  //Generate permissions per social
+  foreach (social_get_types() as $type) {
+    $type_name = check_plain($type->type);
+    $permissions += array(
+      "edit any $type_name social" => array(
+        'title' => t('%type_name: Edit any social', array('%type_name' => $type->label)),
+      ),
+      "view any $type_name social" => array(
+        'title' => t('%type_name: View any social', array('%type_name' => $type->label)),
+      ),
+    );
+  }
+  return $permissions;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function social_theme() {
+  return array(
+    'social' => array(
+      'render element' => 'elements',
+      'template' => 'social',
+    ),
+    'social_search_admin' => array(
+      'render element' => 'form',
+    ),
+    'social_add_list' => array(
+      'variables' => array('content' => NULL),
+    ),
+    'social_admin_overview' => array(
+      'variables' => array('name' => NULL, 'type' => NULL),
+      'file' => 'includes/social_types.inc',
+    ),
+    'social_recent_block' => array(
+      'variables' => array('socials' => NULL),
+    ),
+    'social_recent_content' => array(
+      'variables' => array('social' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_info().
+ *
+ * This is the fundamental description of the entity.
+ *
+ * It provides a single entity with a single bundle and without revision
+ * support.
+ */
+function social_entity_info() {
+
+  $info['social'] = array(
+    // A human readable label to identify our entity.
+    'label' => t('Social Media Entity'),
+    'entity class' => 'Social',
+    // The controller for our Entity, extending the Drupal core controller.
+    'controller class' => 'SocialController',
+    // The table for this entity defined in hook_schema()
+    'base table' => 'social',
+    'revision table' => 'social_revision',
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'social_uri',
+    'creation callback' => 'social_create',
+    'access callback' => 'social_access',
+    'module' => 'social',
+    // IF fieldable == FALSE, we can't attach fields.
+    'fieldable' => TRUE,
+    // entity_keys tells the controller what database fields are used for key
+    // functions. It is not required if we don't have bundles or revisions.
+    'entity keys' => array(
+      'id' => 'smid',
+      'bundle' => 'social_type',
+      'label' => 'iid',
+      'name' => 'iid',
+      'revision' => 'vid',
+      'default revision' => 'default_revision',
+    ),
+    // Bundles are defined by the social types below
+    'bundles' => array(),
+    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    // FALSE disables caching. Caching functionality is handled by Drupal core.
+    'static cache' => TRUE,
+    // The information below is used by the ModelUIController (which extends the EntityDefaultUIController)
+    'admin ui' => array(
+      'path' => 'social',
+      'file' => 'social.admin.inc',
+      'file path' =>  drupal_get_path('module', 'social') . '/includes',
+      'controller class' => 'SocialUIController',
+      'menu wildcard' => '%social',
+    ),
+    // View modes allow entities to be displayed differently based on context.
+    // As a demonstration we'll support "Tweaky", but we could have and support
+    // multiple display modes.
+    'view modes' => array(
+      'default' => array(
+        'label' => t('Default'),
+        'custom settings' => FALSE,
+      ),
+    ),
+  );
+
+  // The entity that holds information about the entity types
+  $info['social_type'] = array(
+    'label' => t('Social Media Type'),
+    'entity class' => 'SocialType',
+    'controller class' => 'SocialTypeController',
+    'base table' => 'social_type',
+    'fieldable' => FALSE,
+    'bundle of' => 'social',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'type',
+      'label' => 'label',
+      'bundle' => 'type',
+    ),
+    'access callback' => 'social_type_access',
+    'module' => 'social',
+    // Enable the entity API's admin UI.
+    'admin ui' => array(
+      'path' => 'admin/structure/social_types',
+      'file' => 'social_type.admin.inc',
+      'file path' =>  drupal_get_path('module', 'social') . '/includes',
+      'controller class' => 'SocialTypeUIController',
+      'menu wildcard' => '%social_type',
+    ),
+  );
+
+  return $info;
+
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * We are adding the info about the social types via a hook to avoid a recursion
+ * issue as loading the social types requires the entity info as well.
+ *
+ * @todo This needs to be improved
+ */
+function social_entity_info_alter(&$entity_info) {
+
+  foreach (social_get_types() as $type => $info) {
+
+    $entity_info['social']['bundles'][$type] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => 'admin/structure/social_types/manage/%social_type',
+        'real path' => 'admin/structure/social_types/manage/' . $type,
+        'bundle argument' => 4,
+        'access arguments' => array('administer social types'),
+      ),
+    );
+
+  }
+
+  $entity_info['social']['view modes']['social_block'] = array(
+    'label' => t('Social block'),
+    'custom settings' => TRUE,
+  );
+
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function social_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'social') . '/views',
+  );
+}
+
+/**
+ * Implementation of hook_feeds_plugins().
+ */
+function social_feeds_plugins() {
+  $info = array();
+  $info['SocialProcessor'] = array(
+    'name' => 'Social processor',
+    'description' => 'Processes social media data.',
+    'handler' => array(
+      'parent' => 'FeedsProcessor', // A plugin needs to derive either directly or indirectly from FeedsFetcher, FeedsParser or FeedsProcessor.
+      'class' => 'SocialProcessor',
+      'file' => 'SocialProcessor.inc',
+      'path' => drupal_get_path('module', 'social') . '/plugins',
+    ),
+  );
+  return $info;
+}
+
+function social_enable() {
+  //clear the cache to display in Feeds as available plugin.
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}
+
+/**
+ * Implements hook_admin_menu_map().
+ *
+ * Maps social types up one level in the admin menu if admin menu module is
+ * enabled and installed (mimics the mapping admin menu does for node module).
+ */
+function social_admin_menu_map() {
+  if (!user_access('administer social types')) {
+    return;
+  }
+  $map['admin/structure/social_types/manage/%social_type'] = array(
+    'parent' => 'admin/structure/social_types',
+    'arguments' => array(
+      array('%social_type' => array_keys(social_get_types())),
+    ),
+  );
+  return $map;
+}
+
+/**
+ * Determines whether the given user has access to a model.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $social_type
+ *   The entity type of the entity to check for.
+ * @param $social
+ *   Optionally a model or a model type to check access for. If nothing is
+ *   given, access for all models is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function social_access($op, $social = NULL, $account = NULL) {
+  if (user_access('administer socials', $account)) {
+    return TRUE;
+  }
+  if (isset($social) && $social_type = $social->type) {
+    $op = ($op == 'view') ? 'view' : 'edit';
+    if (user_access("$op any $social_type social", $account)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+  // return TRUE;
+}
+
+/**
+ * Access callback for the entity API.
+ */
+function social_type_access($op, $type = NULL, $account = NULL) {
+  return user_access('administer social types', $account);
+}
+
+/**
+ * Gets an array of all social types, keyed by the type name.
+ *
+ * @param $type_name
+ *   If set, the type with the given name is returned.
+ * @return SocialType[]
+ *   Depending whether $type isset, an array of social types or a single one.
+ */
+function social_get_types($type_name = NULL) {
+  // entity_load will get the Entity controller for our social entity and call the load
+  // function of that object - we are loading entities by name here.
+  $types = entity_load_multiple_by_name('social_type', isset($type_name) ? array($type_name) : FALSE);
+  return isset($type_name) ? reset($types) : $types;
+}
+
+/**
+ * Menu argument loader; Load a social type by string.
+ *
+ * @param $type
+ *   The machine-readable name of a social type to load.
+ * @return
+ *   A social type array or FALSE if $type does not exist.
+ */
+function social_type_load($type) {
+  return social_get_types($type);
+}
+
+/**
+ * Fetch a basic object.
+ *
+ * This function ends up being a shim between the menu system and
+ * social_load_multiple().
+ *
+ * This function gets its name from the menu system's wildcard
+ * naming conventions. For example, /path/%wildcard would end
+ * up calling wildcard_load(%wildcard value). In our case defining
+ * the path: social/facebook/%social in
+ * hook_menu() tells Drupal to call social_load().
+ *
+ * @param $smid
+ *   Integer specifying the basic entity id.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   A fully-loaded $social object or FALSE if it cannot be loaded.
+ *
+ * @see social_load_multiple()
+ * @see entity_example_menu()
+ */
+function social_load($smid = NULL, $reset = FALSE) {
+  $smids = (isset($smid) ? array($smid) : array());
+  $social = social_load_multiple($smids, array(), $reset);
+  return $social ? reset($social) : FALSE;
+}
+
+/**
+ * Loads multiple basic entities.
+ *
+ * We only need to pass this request along to entity_load(), which
+ * will in turn call the load() method of our entity controller class.
+ */
+function social_load_multiple($smids = FALSE, $conditions = array(), $reset = FALSE) {
+  return entity_load('social', $smids, $conditions, $reset);
+}
+
+/**
+ * URI callback for socials
+ */
+function social_uri($social){
+  return array(
+    'path' => 'social/' . $social->smid,
+  );
+}
+
+/**
+ * Provides a list of existing entities and the ability to add more. Tabs
+ * provide field and display management.
+ */
+function social_admin_page() {
+  $content = array();
+  $content[] = array(
+    '#type' => 'item',
+    '#markup' => t('Administration page for Social Entities.')
+  );
+
+  $content[] = array(
+    '#type' => 'item',
+    '#markup' => l(t('Add a social entity'), 'social/facebook/add'),
+  );
+
+  $content['table'] = social_list_entities();
+
+  return $content;
+}
+
+/**
+ * Returns a render array with all social entities.
+ *
+ * In this basic example we know that there won't be many entities,
+ * so we'll just load them all for display. See pager_example.module
+ * to implement a pager. Most implementations would probably do this
+ * with the contrib Entity API module, or a view using views module,
+ * but we avoid using non-core features in the Examples project.
+ *
+ * @see pager_example.module
+ */
+function social_list_entities() {
+  $content = array();
+  // Load all of our entities.
+  $entities = social_load_multiple();
+  if (!empty($entities)) {
+    foreach ( $entities as $entity ) {
+      // Create tabular rows for our entities.
+      $rows[] = array(
+        'data' => array(
+          'id' => $entity->smid,
+          'iid' => l($entity->iid, 'social/facebook/' . $entity->smid),
+          'bundle' => $entity->bundle,
+        ),
+      );
+    }
+    // Put our entities into a themed table. See theme_table() for details.
+    $content['entity_table'] = array(
+      '#theme' => 'table',
+      '#rows' => $rows,
+      '#header' => array(t('ID'), t('Item ID'), t('Bundle')),
+    );
+  }
+  else {
+    // There were no entities. Tell the user.
+    $content[] = array(
+      '#type' => 'item',
+      '#markup' => t('No social entities currently exist.'),
+    );
+  }
+  return $content;
+}
+
+/**
+ * Callback for a page title when this entity is displayed.
+ */
+function social_title($entity) {
+  return t('@social_type item_id=@item_id', array('@social_type' => $entity->social_type, '@item_id' => $entity->iid));
+}
+
+/**
+ * Menu callback to display an entity.
+ *
+ * As we load the entity for display, we're responsible for invoking a number
+ * of hooks in their proper order.
+ *
+ * @see hook_entity_prepare_view()
+ * @see hook_entity_view()
+ * @see hook_entity_view_alter()
+ */
+function social_view($entity, $view_mode = 'default') {
+  // Our entity type, for convenience.
+  $entity_type = 'social';
+  // Start setting up the content.
+  $entity->content = array(
+    '#view_mode' => $view_mode,
+  );
+  // Build fields content - this is where the Field API really comes in to play.
+  // The task has very little code here because it all gets taken care of by
+  // field module.
+  // field_attach_prepare_view() lets the fields load any data they need
+  // before viewing.
+  field_attach_prepare_view($entity_type, array($entity->smid => $entity),
+    $view_mode);
+  // We call entity_prepare_view() so it can invoke hook_entity_prepare_view()
+  // for us.
+  entity_prepare_view($entity_type, array($entity->smid => $entity));
+  // Now field_attach_view() generates the content for the fields.
+  $entity->content += field_attach_view($entity_type, $entity, $view_mode);
+
+  // OK, Field API done, now we can set up some of our own data.
+  $entity->content['created'] = array(
+    '#type' => 'item',
+    '#title' => t('Created date'),
+    '#markup' => format_date($entity->created),
+  );
+  $entity->content['iid'] = array(
+    '#type' => 'item',
+    '#title' => t('Item ID'),
+    '#markup' => $entity->iid,
+  );
+
+  // Now to invoke some hooks. We need the language code for
+  // hook_entity_view(), so let's get that.
+  global $language ;
+  $langcode = $language->language ;
+  // And now invoke hook_entity_view().
+  module_invoke_all('entity_view', $entity, $entity_type, $view_mode,
+    $langcode);
+  // Now invoke hook_entity_view_alter().
+  drupal_alter(array('social_view', 'entity_view'),
+    $entity->content, $entity_type);
+
+  // And finally return the content.
+  return $entity->content;
+}
+
+/**
+ * Sets up content to show an individual social
+ * @todo - get rid of drupal_set_title();
+ */
+function social_page_view($social, $view_mode = 'full') {
+  $controller = entity_get_controller('social');
+  $content = $controller->view(array($social->smid => $social));
+  drupal_set_title($social->iid);
+  return $content;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ *
+ * This exposes the "extra fields" (usually properties that can be configured
+ * as if they were fields) of the entity as pseudo-fields
+ * so that they get handled by the Entity and Field core functionality.
+ * Node titles get treated in a similar manner.
+ */
+/*function social_field_extra_fields() {
+  $form_elements['iid'] = array(
+    'label' => t('Item ID'),
+    'description' => t('Item ID (an extra form field)'),
+    'weight' => -5,
+  );
+  $display_elements['created'] = array(
+    'label' => t('Creation date'),
+    'description' => t('Creation date (an extra display field)'),
+    'weight' => 0,
+  );
+  $display_elements['iid'] = array(
+    'label' => t('Item ID'),
+    'description' => t('Just like title, but trying to point out that it is a separate property'),
+    'weight' => 0,
+  );
+
+  // Since we have only one bundle type, we'll just provide the extra_fields
+  // for it here.
+  $extra_fields['social']['facebook']['form'] = $form_elements;
+  $extra_fields['social']['facebook']['display'] = $display_elements;
+
+  return $extra_fields;
+}*/
+
+/**
+ * Provides a wrapper on the edit form to add a new entity.
+ */
+function social_add($type) {
+  // Create a basic entity structure to be used and passed to the validation
+  // and submission functions.
+  $values['social_type'] = $type;
+  $entity = entity_get_controller('social')->create($values);
+  return drupal_get_form('social_form', $entity);
+}
+
+/**
+ * Form function to create a social entity.
+ *
+ * The pattern is:
+ * - Set up the form for the data that is specific to your
+ *   entity: the columns of your base table.
+ * - Call on the Field API to pull in the form elements
+ *   for fields attached to the entity.
+ */
+function social_form($form, &$form_state, $entity) {
+  $form['item_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Item ID'),
+    '#required' => TRUE,
+    '#default_value' => $entity->iid,
+  );
+
+  $form['social_entity'] = array(
+    '#type' => 'value',
+    '#value' => $entity,
+  );
+
+  field_attach_form('social', $entity, $form, $form_state);
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => 100,
+  );
+  $form['delete'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+    '#submit' => array('social_edit_delete'),
+    '#weight' => 200,
+  );
+
+  return $form;
+}
+
+/**
+ * Validation handler for social_add_form form.
+ * We pass things straight through to the Field API to handle validation
+ * of the attached fields.
+ */
+function social_form_validate($form, &$form_state) {
+  field_attach_form_validate('social', $form_state['values']['social_entity'], $form, $form_state);
+}
+
+
+/**
+ * Form submit handler: submits basic_add_form information
+ */
+function social_form_submit($form, &$form_state) {
+  $entity = $form_state['values']['social_entity'];
+  $entity->iid = $form_state['values']['item_id'];
+  field_attach_submit('social', $entity, $form, $form_state);
+  social_save($entity);
+  $form_state['redirect'] = 'social/' . $entity->social_type . '/' . $entity->smid;
+}
+
+/**
+ * Form deletion handler.
+ *
+ * @todo: 'Are you sure?' message.
+ */
+function social_edit_delete(&$form, &$form_state) {
+  $entity = $form_state['values']['social_entity'];
+  social_delete($entity);
+  drupal_set_message(t('The entity %iid (ID %id) has been deleted',
+    array('%iid' => $entity->iid, '%id' => $entity->smid))
+  );
+  $form_state['redirect'] = 'social/facebook/add';
+}
+
+/**
+ * Create a social object.
+ */
+function social_create($values = array()) {
+  // Create a basic entity structure to be used and passed to the validation
+  // and submission functions.
+  return entity_get_controller('social')->create($values);
+}
+
+/**
+ * We save the entity by calling the controller.
+ */
+function social_save(&$entity) {
+  // dpm($entity);
+  return entity_get_controller('social')->save($entity);
+}
+
+/**
+ * Use the controller to delete the entity.
+ */
+function social_delete($entity) {
+  entity_get_controller('social')->delete(array($entity->smid));
+}
+
+/**
+ * Saves a social type to the db.
+ */
+function social_type_save(SocialType $type) {
+  $type->save();
+}
+
+
+/**
+ * Deletes a social type from the db.
+ */
+function social_type_delete(SocialType $type) {
+  $type->delete();
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function social_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/structure/models/add' on 'admin/structure/models'.
+  if ($root_path == 'admin/content/socials') {
+    $item = menu_get_item('admin/content/socials/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Process variables for social.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $social
+ * - $view_mode
+ *
+ * @see social.tpl.php
+ */
+function template_preprocess_social(&$variables) {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  $entity_type = $variables['elements']['#entity_type'];
+  $variables['entity_type'] = $entity_type;
+  $entity = $variables['elements']['#entity'];
+  $variables[$variables['elements']['#entity_type']] = $entity;
+  $info = entity_get_info($entity_type);
+
+  $variables['title'] = check_plain(entity_label($entity_type, $entity));
+
+  $uri = entity_uri($entity_type, $entity);
+  $variables['url'] = $uri ? url($uri['path'], $uri['options']) : FALSE;
+
+  if (isset($variables['elements']['#page'])) {
+    // If set by the caller, respect the page property.
+    $variables['page'] = $variables['elements']['#page'];
+  }
+  else {
+    // Else, try to automatically detect it.
+    $variables['page'] = $uri && $uri['path'] == $_GET['q'];
+  }
+
+  // Helpful $content variable for templates.
+  $variables['content'] = array();
+  foreach (element_children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+
+  if (!empty($info['fieldable'])) {
+    // Make the field variables available with the appropriate language.
+    field_attach_preprocess($entity_type, $entity, $variables['content'], $variables);
+  }
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Gather css classes.
+  $variables['classes_array'][] = drupal_html_class('entity-' . $entity_type);
+  $variables['classes_array'][] = drupal_html_class($entity_type . '-' . $bundle);
+
+  // Add RDF type and about URI.
+  if (module_exists('rdf')) {
+    $variables['attributes_array']['about'] = empty($uri['path']) ? NULL: url($uri['path']);
+    $variables['attributes_array']['typeof'] = empty($entity->rdf_mapping['rdftype']) ? NULL : $entity->rdf_mapping['rdftype'];
+  }
+
+  // Add suggestions.
+  $variables['theme_hook_suggestions'][] = $entity_type;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle . '__' . $variables['view_mode'];
+  if ($id = entity_id($entity_type, $entity)) {
+    $variables['theme_hook_suggestions'][] = $entity_type . '__' . $id;
+  }
+}
+
+
+/**
+ * The class used for model entities
+ */
+class Social extends Entity {
+
+  public function __construct($values = array()) {
+    parent::__construct($values, 'social');
+  }
+
+  /*protected function defaultLabel() {
+    return;
+  }*/
+
+  protected function defaultUri() {
+    return array('path' => 'social/' . $this->smid);
+  }
+
+  /**
+   * Returns the entity identifier, i.e. the entities name or numeric id.
+   *
+   * @return
+   *   The identifier of the entity. If the entity type makes use of a name key,
+   *   the name is returned, else the numeric id.
+   *
+   * @see entity_id()
+   */
+  public function identifier() {
+    return $this->smid;
+  }
+
+}
+
+
+/**
+ * The class used for model type entities
+ */
+class SocialType extends Entity {
+
+  public $type;
+  public $label;
+
+  public function __construct($values = array()) {
+    parent::__construct($values, 'social_type');
+  }
+
+}
+
+/**
+ * The Controller for Model entities
+ */
+class SocialTypeController extends EntityAPIControllerExportable {
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+   /**
+   * Create a social type - we first set up the values that are specific
+   * to our model type schema but then also go through the EntityAPIController
+   * function.
+   *
+   * @param $type
+   *   The machine-readable type of the social.
+   *
+   * @return
+   *   A model type object with all default fields initialized.
+   */
+  public function create(array $values = array()) {
+    // Add values that are specific to our Social
+    $values += array(
+      'id' => '',
+      'is_new' => TRUE,
+      'data' => '',
+    );
+    $social_type = parent::create($values);
+    return $social_type;
+  }
+
+}

@@ -1,0 +1,169 @@
+<?php
+/**
+ * @file Instagram import module.
+ */
+
+function instagram_import_menu() {
+
+  $items['instagram-import/oauth'] = array(
+    'title' => 'Instagram',
+    'access callback' => TRUE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('instagram_import_oauth_callback'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/services/instagram-import'] = array(
+    'title' => 'Instagram',
+    'description' => 'Configure integration with Instagram (and compatible) API services.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('instagram_import_admin'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'instagram_import.admin.inc',
+  );
+
+  return $items;
+
+}
+
+/**
+ * Implements hook_import_ctools_plugin_api().
+ *
+ * Required for hook_feeds_plugin() to work.
+ */
+function instagram_import_ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implementation of hook_feeds_plugins().
+ */
+function instagram_import_feeds_plugins() {
+  $info = array();
+  $info['InstragramFetcher'] = array(
+    'name' => 'Instagram fetcher',
+    'description' => 'Fetches the data from an Instragram user feed.',
+    'handler' => array(
+      'parent' => 'FeedsFetcher',
+      'class' => 'InstagramFetcher',
+      'file' => 'InstagramFetcher.inc',
+      'path' => drupal_get_path('module', 'instagram_import') . '/plugins',
+    ),
+  );
+  $info['InstagramParser'] = array(
+    'name' => 'Instagram parser',
+    'description' => 'Parses the data from an Instagram user feed.',
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'InstagramParser',
+      'file' => 'InstagramParser.inc',
+      'path' => drupal_get_path('module', 'instagram_import') . '/plugins',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * Clear Feed's plugin cache so that this plugin shows up.
+ */
+function instagram_import_enable() {
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}
+
+/**
+ * @TODO This code should probably be reviewed.
+ *
+ * Wrapper to call drupal_form_submit() which wasn't required in D6.
+ */
+function instagram_import_oauth_callback() {
+  $form_state['values']['code'] = $_GET['code'];
+  drupal_form_submit('instagram_import_oauth_callback_form', $form_state);
+}
+
+/**
+ * Form builder function. In D6 this form was built in response to the
+ * oauth return request from Instagram, and the setting of
+ * $form['#post'] seems to have caused the form to be validated and
+ * processed.
+ */
+function instagram_import_oauth_callback_form($form, &$form_state) {
+  if (isset($_GET['code'])) {
+    $form['#post']['code'] = $_GET['code'];
+  }
+  $form['code'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $_GET['code'],
+  );
+  return $form;
+}
+
+/**
+ * Validate results from Instagram OAuth return request.
+ */
+function instagram_import_oauth_callback_form_validate($form, &$form_state) {
+  $client_id = variable_get('instagram_import_client_id', '');
+  $client_secret = variable_get('instagram_import_client_secret', '');
+  $callback_uri = url('instagram-import/oauth', array('absolute' => TRUE));
+
+  if ($client_id == '' || $client_secret == '') {
+    form_set_error('', t('Please configure your Instagram consumer key and secret.'));
+  }
+
+  if (isset($_SESSION['instagram_import_oauth'])) {
+    $form_state['instagram_import_oauth'] = $_SESSION['instagram_import_oauth'];
+    unset($_SESSION['instagram_import_oauth']);
+  }
+  else {
+    form_set_error('oauth_token', 'Invalid Instagram OAuth request: Session mismatch.');
+  }
+
+  module_load_include('lib.php', 'oauth_common');
+  module_load_include('lib.php', 'instagram_import');
+
+  if ($instagram = new InstagramOAuth($client_id, $client_secret, $callback_uri)) {
+    if ($response = $instagram->get_access_token($form_state['values']['code'], $callback_uri)) {
+      $form_state['instagram_import_oauth']['response'] = $response;
+    }
+    else {
+      form_set_error('oauth_token', t('Invalid Instagram OAuth request: Token invalid'));
+    }
+  }
+  else {
+    form_set_error('oauth_token', t('Invalid Instagram OAuth request: Invalid oAuth Settings'));
+  }
+}
+
+/**
+ * Handle a Instagram OAuth return request and store the account creds
+ * in the DB. Redirects to user/%/edit/instagram_import
+ *
+ * @TODO Redirect better.
+ *
+ * I don't much like the use of drupal_goto() here as it might
+ * interfere with other modules trying to piggyback on the form
+ * submission, but setting $form['redirect'] was leaving us at the
+ * instagram-import/oauth URL.
+ */
+function instagram_import_oauth_callback_form_submit(&$form, &$form_state) {
+  $client_id = variable_get('instagram_import_client_id', '');
+  $client_secret = variable_get('instagram_import_client_secret', '');
+  $response = $form_state['instagram_import_oauth']['response'];
+
+  variable_set('instagram_import_access_token', $response['access_token']);
+
+  $form['#programmed'] = FALSE;
+
+  // Clear status messages before creating new one.
+  drupal_get_messages('status');
+  drupal_set_message(t('You have successfully authenticated to Instagram in order to get an access token. Please fill out this form in order to setup your importer.'), 'status');
+
+  $form_state['redirect'] = $_SESSION['instagram_oauth']['destination'];
+  // redirect isn't firing - because we're using drupal_submit_form()?
+  // - so adding drupal_goto() here (but not liking it).
+  drupal_goto($_SESSION['instagram_oauth']['destination']);
+}
+
+

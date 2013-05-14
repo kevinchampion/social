@@ -1,0 +1,66 @@
+<?php
+/**
+ * @file Twitter import module.
+ */
+
+
+/**
+ * Implements hook_twitter_status_save().
+ *
+ * Notifies of a saved tweet.
+ *
+ * @param $status
+ *   stdClass containing information about the status message.
+ * @see https://dev.twitter.com/docs/platform-objects/tweets for details about the contents of $status.
+ */
+function twitter_import_twitter_status_save($status) {
+
+  // watchdog('twitter_import', 'status save: !replace', array('!replace' => '<pre>' . print_r($status, TRUE) . '</pre>'), WATCHDOG_NOTICE);
+
+  // Use EntityFieldQuery to try to find an already existing social entity.
+  $query = new EntityFieldQuery;
+  $result = $query
+    ->entityCondition('entity_type', 'social')
+    ->propertyCondition('social_type', 'twitter')
+    ->propertyCondition('iid', $status->id)
+    ->execute();
+
+  if (isset($result['social'])) {
+
+    $smids = array_keys($result['social']);
+
+    if (count($smids) !== 1) {
+
+      // There's a problem here.
+      watchdog('twitter_import', 'Tweet EntityFieldQuery return multiple results for a single tweet iid. This indicates a unique iid database problem: !status', array('[!replace]' => '<pre>' . print_r($status, TRUE) . '</pre>'), WATCHDOG_WARNING);
+
+      return;
+
+    }
+
+    // Load existing entity.
+    $tweet = social_load($smids[0]);
+
+  }
+  else {
+
+    // Create a new entity.
+    $values = array(
+      'bundle' => 'twitter',
+      'social_type' => 'twitter',
+      'iid' => $status->id,
+    );
+    $tweet = social_create($values);
+
+  }
+
+  // Add fields to new entity.
+  $tweet->field_tw_tweet[$tweet->language][0]['value'] = $status->text;
+  $tweet->field_tw_created[$tweet->language][0]['value'] = strtotime($status->created_at);
+  $tweet->field_tw_favorites[$tweet->language][0]['value'] = isset($status->favorite_count) ? $status->favorite_count : 0;
+  $tweet->field_tw_retweets[$tweet->language][0]['value'] = isset($status->retweet_count) ? $status->retweet_count : 0;
+
+  // Save the tweet entity.
+  $tweet = social_save($tweet);
+
+}

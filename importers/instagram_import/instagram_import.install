@@ -1,0 +1,15 @@
+<?php
+/**
+ * @file Instagram Import install
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function instagram_import_uninstall() {
+
+  variable_del('instagram_import_client_id');
+  variable_del('instagram_import_client_secret');
+  variable_del('instagram_import_access_token');
+
+}

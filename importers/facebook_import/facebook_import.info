@@ -1,0 +1,10 @@
+name = Facebook import
+description = Creates social media entities for storing social media content.
+core = 7.x
+package = Social Media
+
+dependencies[] = feeds
+dependencies[] = feeds_jsonpath_parser
+dependencies[] = libraries
+dependencies[] = social
+

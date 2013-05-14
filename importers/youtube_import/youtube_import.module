@@ -1,0 +1,54 @@
+<?php
+/**
+ * @file YouTube import plugin.
+ */
+
+/**
+ * Implements hook_import_ctools_plugin_api().
+ *
+ * Required for hook_feeds_plugin() to work.
+ */
+function youtube_import_ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implementation of hook_feeds_plugins().
+ */
+function youtube_import_feeds_plugins() {
+  $info = array();
+  $info['YouTubeFeedFetcher'] = array(
+    'name' => 'YouTube feed fetcher',
+    'description' => 'Fetches the data from a YouTube feed.',
+    'handler' => array(
+      'parent' => 'FeedsFetcher',
+      'class' => 'YouTubeFeedFetcher',
+      'file' => 'YouTubeFeedFetcher.inc',
+      'path' => drupal_get_path('module', 'youtube_import') . '/plugins',
+    ),
+  );
+  $info['YouTubeFeedParser'] = array(
+    'name' => 'YouTube feed parser',
+    'description' => 'Parses the data from a YouTube feed.',
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'YouTubeFeedParser',
+      'file' => 'YouTubeFeedParser.inc',
+      'path' => drupal_get_path('module', 'youtube_import') . '/plugins',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * Clear Feed's plugin cache so that this plugin shows up.
+ */
+function youtube_import_enable() {
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}
+
+

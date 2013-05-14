@@ -1,0 +1,8 @@
+name = Pinterest import
+description = Creates Pinterest parser for storing social media content from a Pinterest feed.
+core = 7.x
+package = Social Media
+
+dependencies[] = feeds
+dependencies[] = social
+

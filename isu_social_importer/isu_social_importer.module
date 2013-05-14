@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Social importer feature.
+ */
+
+include_once 'isu_social_importer.features.inc';

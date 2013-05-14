@@ -1,0 +1,8 @@
+name = Instagram import
+description = Creates Instagram integration for storing social media content from an Instagram user account.
+core = 7.x
+package = Social Media
+
+dependencies[] = oauth_common
+dependencies[] = social
+files[] = instagram_import.lib.php

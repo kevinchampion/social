@@ -1,0 +1,183 @@
+<?php
+/**
+ * @file Facebook import plugin.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function facebook_import_menu() {
+
+  $items['admin/config/services/facebook_import'] = array(
+    'title' => 'Facebook Import',
+    'description' => 'Configure Facebook Import.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('facebook_import_admin'),
+    'file' => 'facebook_import.admin.inc',
+    'access arguments' => array('administer facebook import'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+
+}
+
+/**
+ * Implements hook_permission().
+ */
+function facebook_import_permission() {
+  // We set up permisssions to manage entity types, manage all entities and the
+  // permissions for each individual entity
+  $permissions = array(
+    'administer facebook import' => array(
+      'title' => t('Administer Facebook import'),
+      'description' => t('Configure Facebook App credentials.'),
+    ),
+  );
+
+  return $permissions;
+
+}
+
+/**
+ * Implements hook_import_ctools_plugin_api().
+ *
+ * Required for hook_feeds_plugin() to work.
+ */
+function facebook_import_ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implementation of hook_feeds_plugins().
+ */
+function facebook_import_feeds_plugins() {
+  $info = array();
+  $info['FacebookPageFetcher'] = array(
+    'name' => 'Facebook page fetcher',
+    'description' => 'Fetches the data from a Facebook page feed.',
+    'handler' => array(
+      'parent' => 'FeedsFetcher',
+      'class' => 'FacebookPageFetcher',
+      'file' => 'FacebookPageFetcher.inc',
+      'path' => drupal_get_path('module', 'facebook_import') . '/plugins',
+    ),
+  );
+  $info['FacebookPageParser'] = array(
+    'name' => 'Facebook page parser',
+    'description' => 'Parses the data from a Facebook page feed.',
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'FacebookPageParser',
+      'file' => 'FacebookPageParser.inc',
+      'path' => drupal_get_path('module', 'facebook_import') . '/plugins',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * Clear Feed's plugin cache so that this plugin shows up.
+ */
+function facebook_import_enable() {
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}
+
+/**
+ * Given an app ID and secret from Facebook, return an access token.
+ *
+ * The access token is required to retrieve even the most basic information
+ * from Facebook. It's usually valid for about 15 minutes.
+ *
+ * @param $app_id
+ *   The Facebook app ID. If not passed in, it will be retrieved from the
+ *   app_id variable.
+ * @param $app_secret
+ *   The Facebook app secret. If not passed in, it will be retrieved from the
+ *   app_id variable.
+ *
+ * @return
+ *   An access token that can be used in REST queries against Facebook's Graph
+ *   API, which will provide us with info about the Facebook user.
+ */
+function facebook_import_access_token($app_id = NULL, $app_secret = NULL) {
+
+  // Use the default App ID and App Secret if not specified.
+  $app_id = isset($app_id) ? $app_id : variable_get('facebook_import_app_id', '');
+  $app_secret = isset($app_secret) ? $app_secret : variable_get('facebook_import_app_secret', '');
+
+  $query = array(
+    'client_id' => $app_id,
+    'client_secret' => $app_secret,
+    'grant_type' => 'client_credentials',
+  );
+  $token_url = url('https://graph.facebook.com/oauth/access_token', array('absolute' => TRUE, 'query' => $query));
+  $authentication_result = drupal_http_request($token_url);
+
+  if ($authentication_result->code != 200) {
+    $error = !empty($authentication_result->error) ? $authentication_result->error : t('(no error returned)');
+    $data = !empty($authentication_result->data) ? print_r($authentication_result->data, TRUE) : t('(no data returned)');
+    watchdog('facebook_import', 'Facebook Import could not acquire an access token from Facebook. We queried the following URL: <code><pre>@url</pre></code>. Facebook\'s servers returned an error @error: <code><pre>@return</pre></code>', array('@url' => $token_url, '@error' => $error, '@return' => $data), WATCHDOG_WARNING);
+  }
+  else {
+    // The result from Facebook comes back in a query-string-like format,
+    // key1=value1&key2=value2. Parse into an array.
+    $authentication_strings = explode('&', $authentication_result->data);
+    $authentication_values = array();
+    foreach ($authentication_strings as $authentication_string) {
+      list($authentication_key, $authentication_value) = explode('=', $authentication_string);
+      $authentication_values[$authentication_key] = $authentication_value;
+    }
+  }
+
+  return isset($authentication_values['access_token']) ? $authentication_values['access_token'] : NULL;
+
+}
+
+/**
+ * Retrieve the facebook page id of a user
+ *
+ * @param $name
+ *   String user or account name. This is the name appended to the url of the
+ *   landing page facebook page: http://www.facebook.com/[$name]
+ *
+ * @return
+ *   Page ID number or FALSE if unknown.
+ */
+function facebook_import_retrieve_page_id($name) {
+
+  $id = FALSE;
+
+  $feed_url = url('https://graph.facebook.com/' . $name);
+
+  $result = drupal_http_request($feed_url);
+
+  if ($result->code != 200) {
+
+    $error = !empty($result->error) ? $result->error : t('(no error returned)');
+    $data = !empty($result->data) ? print_r($result->data, TRUE) : t('(no data returned)');
+
+    watchdog('facebook_import', 'Facebook Import could not acquire the page ID from Facebook. We queried the following URL: <code><pre>@url</pre></code>. Facebook\'s servers returned an error @error: <code><pre>@return</pre></code>.', array('@url' => $feed_url, '@error' => $error, '@return' => $data), WATCHDOG_WARNING);
+
+  }
+  else {
+
+    $feed = json_decode($result->data);
+
+    if (isset($feed->id)) {
+
+      $id = $feed->id;
+
+    }
+
+  }
+
+  return $id;
+
+}
+

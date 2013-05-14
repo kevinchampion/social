@@ -1,0 +1,18 @@
+name = Social Media entities
+description = Creates social media entities for storing social media content.
+core = 7.x
+package = Social Media
+
+dependencies[] = entity
+dependencies[] = feeds
+dependencies[] = ctools
+dependencies[] = views
+
+files[] = includes/SocialController.class.php
+files[] = includes/social.admin.inc
+files[] = includes/social_type.admin.inc
+files[] = views/social.views.inc
+files[] = views/social_handler_link_field.inc
+files[] = views/social_handler_delete_link_field.inc
+files[] = views/social_handler_edit_link_field.inc
+files[] = views/social_handler_social_operations_field.inc

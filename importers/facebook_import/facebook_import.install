@@ -1,0 +1,17 @@
+<?php
+/**
+ * @file Facebook Import install
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function facebook_import_uninstall() {
+
+  variable_del('facebook_import_active');
+  variable_del('facebook_import_app_id');
+  variable_del('facebook_import_app_secret');
+  variable_del('facebook_import_page_name');
+  variable_del('facebook_import_page_id');
+
+}

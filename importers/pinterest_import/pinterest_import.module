@@ -1,0 +1,52 @@
+<?php
+/**
+ * @file pinterest import plugin.
+ */
+
+/**
+ * Implements hook_import_ctools_plugin_api().
+ *
+ * Required for hook_feeds_plugin() to work.
+ */
+function pinterest_import_ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implementation of hook_feeds_plugins().
+ */
+function pinterest_import_feeds_plugins() {
+  $info = array();
+  /*$info['PinterestFeedFetcher'] = array(
+    'name' => 'Pinterest feed fetcher',
+    'description' => 'Fetches the data from a Pinterest feed.',
+    'handler' => array(
+      'parent' => 'FeedsFetcher',
+      'class' => 'PinterestFeedFetcher',
+      'file' => 'PinterestFeedFetcher.inc',
+      'path' => drupal_get_path('module', 'pinterest_import') . '/plugins',
+    ),
+  );*/
+  $info['PinterestFeedParser'] = array(
+    'name' => 'Pinterest feed parser',
+    'description' => 'Parses the data from a pinterest feed.',
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'PinterestFeedParser',
+      'file' => 'PinterestFeedParser.inc',
+      'path' => drupal_get_path('module', 'pinterest_import') . '/plugins',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * Clear Feed's plugin cache so that this plugin shows up.
+ */
+function pinterest_import_enable() {
+  cache_clear_all('plugins:feeds:plugins', 'cache');
+}

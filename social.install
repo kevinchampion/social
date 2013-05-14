@@ -1,0 +1,196 @@
+<?php
+/**
+ * @file Social Media entity install
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function social_uninstall() {
+
+  $types = db_select('social_type', 'st')
+    ->fields('st')
+    ->execute()
+    ->fetchAllAssoc('type');
+
+  // @see http://drupal.org/node/1330598
+  foreach ($types as $name => $type) {
+    field_attach_delete_bundle('social', $name);
+  }
+
+}
+
+/**
+ * Implements hook_schema().
+ */
+function social_schema() {
+
+  $schema['social'] = array(
+    'description' => 'Stores social media items.',
+    'fields' => array(
+      'smid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique social media item ID.',
+        'unsigned' => TRUE,
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Revision ID',
+        'default' => 0,
+        'unsigned' => TRUE,
+      ),
+      'iid' => array(
+        'description' => "Social media service item id.",
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'social_type' => array(
+        'description' => 'The {social_type}.social_type of this social item.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'view_mode' => array(
+        'description' => 'The View mode to use as the social.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => 'default',
+      ),
+      'language' => array(
+        'description' => 'The language of the social.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this bean.',
+      ),
+      'uid' => array(
+        'description' => 'The author of the revision.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the entity was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the entity was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('smid'),
+    'unique keys' => array(
+      'vid' => array('vid'),
+      // 'iid-type' => array('iid', 'social_type'),
+    ),
+  );
+
+  $schema['social_revision'] =  array(
+    'description' => 'Stores social media items.',
+    'fields' => array(
+      'smid' => array(
+        'description' => 'The {social} this version belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'vid' => array(
+        'description' => 'The primary identifier for this version.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'iid' => array(
+        'description' => "Social media service item id.",
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The author of the revision.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'log' => array(
+        'description' => t('A log message associated with the revision.'),
+        'type' => 'text',
+        'size' => 'big',
+      ),
+      'timestamp' => array(
+        'description' => 'The Unix timestamp when the revision was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('vid'),
+    'indexes' => array(
+      'smid' => array('smid', 'vid'),
+    ),
+  );
+
+  $schema['social_type'] = array(
+    'description' => 'Stores information about defined social types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique social type identifier.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this social type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this social type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'The weight of this social type in relation to others.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this social type.',
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+
+return $schema;
+
+}

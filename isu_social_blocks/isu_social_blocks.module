@@ -1,0 +1,223 @@
+<?php
+/**
+ * @file
+ * Code for the Social blocks feature.
+ */
+
+include_once 'isu_social_blocks.features.inc';
+
+
+/**
+ * Implements hook_theme().
+ */
+function isu_social_blocks_theme(&$existing, &$type, &$theme, &$path) {
+
+  $path = drupal_get_path('module', 'isu_social_blocks');
+
+  return array(
+    'social__facebook__social_block' => array(
+      'template' => 'social__facebook__social_block',
+      'path' => $path . '/templates',
+    ),
+    'social__youtube__social_block' => array(
+      'template' => 'social__youtube__social_block',
+      'path' => $path . '/templates',
+    ),
+    'social__twitter__social_block' => array(
+      'template' => 'social__twitter__social_block',
+      'path' => $path . '/templates',
+    ),
+    'social__instagram__social_block' => array(
+      'template' => 'social__instagram__social_block',
+      'path' => $path . '/templates',
+    ),
+    'social__pinterest__social_block' => array(
+      'template' => 'social__pinterest__social_block',
+      'path' => $path . '/templates',
+    ),
+  );
+
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function isu_social_blocks_preprocess_social(&$variables) {
+
+  global $base_path;
+
+  $path = drupal_get_path('module', 'isu_social_blocks');
+
+  if($variables['view_mode'] == 'social_block') {
+
+    switch ($variables['social']->social_type) {
+
+      case 'facebook':
+
+        $variables['facebook_user_url'] = $variables['social']->field_fb_page_username[$variables['social']->language][0]['value'];
+        $variables['facebook_logo_path'] = $base_path . $path . '/images/f_logo@2x.png';
+        $variables['facebook_post_url'] = $variables['social']->field_fb_post_url[$variables['social']->language][0]['url'];
+        $variables['facebook_page_name'] = $variables['social']->field_fb_page_name[$variables['social']->language][0]['value'];
+
+        if ($variables['social']->field_fb_type[$variables['social']->language][0]['value'] == 'photo') {
+
+          $variables['like_button'] = '<iframe src="//www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.facebook.com%2Fphoto.php%3Ffbid%3D' . $variables['social']->iid . '&amp;send=false&amp;layout=button_count&amp;width=50&amp;show_faces=false&amp;font&amp;colorscheme=light&amp;action=like&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" allowTransparency="true"></iframe>';
+        }
+        else {
+          $variables['like_button'] = '<iframe src="//www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2FIndianaState%2Fposts%2F' . $variables['social']->iid . '&amp;send=false&amp;layout=button_count&amp;width=100&amp;show_faces=false&amp;font&amp;colorscheme=light&amp;action=like&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100px; height:21px;" allowTransparency="true"></iframe>';
+
+        }
+        // Wrap date in link to post.
+        $variables['content']['field_fb_created'][0]['#markup'] = $variables['content']['field_fb_created'][0]['#markup'];
+
+        break;
+
+      case 'youtube':
+
+        $variables['youtube_user_url'] = 'http://www.youtube.com/user/' . $variables['social']->field_yt_author[$variables['social']->language][0]['value'];
+        $variables['youtube_logo_path'] = $base_path . $path . '/images/yt-brand-standard-logo@2x.png';
+
+        break;
+
+      case 'twitter':
+
+        module_load_include('inc', 'twitter', 'twitter');
+
+        $twitter_user = twitter_account_load('indianastate');
+
+        $variables['twitter_name'] = $twitter_user->name;
+        $variables['twitter_screen_name'] = $twitter_user->screen_name;
+        $variables['twitter_profile_image_url'] = $twitter_user->profile_image_url;
+        $variables['twitter_user_url'] = 'http://www.twitter.com/' . $variables['twitter_screen_name'];
+        $variables['twitter_logo_path'] = $base_path . $path . '/images/twitter-bird-light-bgs@2x.png';
+
+        break;
+
+      case 'pinterest':
+
+        $variables['pinterest_user_url'] = 'http://www.pinterest.com/indianastate';
+        $variables['pinterest_logo_path'] = $base_path . $path . '/images/pinterest_logo_red@2x.png';
+
+        break;
+
+      case 'instagram':
+
+        $variables['instagram_user_url'] = 'http://www.instagram.com/indianastateuniversity';
+        $variables['instagram_logo_path'] = $base_path . $path . '/images/instagram_icon@2x.png';
+
+        break;
+
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function isu_social_blocks_block_info() {
+  $blocks['social-links'] = array(
+    'info' => t('Social media links.'),
+    'status' => TRUE,
+    'region' => 'footer_4',
+  );
+  $blocks['isu-mobile'] = array(
+    'info' => t('ISU Mobile'),
+    'status' => TRUE,
+    'region' => 'footer_3',
+  );
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function isu_social_blocks_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'social-links':
+      $block['subject'] = t('Stay connected');
+      $block['content'] = isu_social_blocks_links();
+      break;
+    case 'isu-mobile':
+      $block['subject'] = t('ISU Mobile');
+      $block['content'] = isu_social_blocks_mobile();
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Social media links.
+ */
+function isu_social_blocks_links() {
+  $icons = isu_social_blocks_links_array();
+  $output = '<div id="footer-social">';
+  foreach ($icons as $key => $icon) {
+    $img = theme('image', array('path' => $icon['img_path'], 'alt' => $icon['title']));
+    $output .= l($img, $icon['url'], array('absolute' => TRUE, 'html' => TRUE, 'attributes' => array('class' => $icon['class'], 'title' => $icon['title'])));
+  }
+  $output .= '</div>';
+
+  return $output;
+}
+
+/**
+ * Defines the social media icons.
+ *
+ * @return array
+ *   An array containing title, url, image path and class name for each icon.
+ */
+function isu_social_blocks_links_array() {
+  $path = drupal_get_path('module', 'isu_social_blocks') . '/images/';
+  return array(
+    'facebook' => array(
+      'title' => t('Facebook'),
+      'url' => 'http://www.facebook.com/IndianaState',
+      'img_path' => $path . 'icon-facebook.png',
+      'class' => 'social-facebook',
+    ),
+    'twitter' => array(
+      'title' => t('Twitter'),
+      'url' => 'http://twitter.com/indianastate',
+      'img_path' => $path . 'icon-twitter.png',
+      'class' => 'social-twitter',
+    ),
+    'google' => array(
+      'title' => t('Google Plus'),
+      'url' => 'https://plus.google.com/110772736835956391200/posts',
+      'img_path' => $path . 'icon-google.png',
+      'class' => 'social-google',
+    ),
+    'pinterest' => array(
+      'title' => t('Pinterest'),
+      'url' => 'http://pinterest.com/indianastate',
+      'img_path' => $path . 'icon-pinterest.png',
+      'class' => 'social-pinterest',
+    ),
+    'linkedin' => array(
+      'title' => t('LinkedIn'),
+      'url' => 'http://www.linkedin.com/in/indianastateu',
+      'img_path' => $path . 'icon-linkedin.png',
+      'class' => 'social-linkedin',
+    ),
+    'youtube' => array(
+      'title' => t('Youtube'),
+      'url' => 'http://www.youtube.com/user/IndianaStateU',
+      'img_path' => $path . 'icon-youtube.png',
+      'class' => 'social-youtube',
+    ),
+  );
+}
+
+/**
+ * ISU Mobile links.
+ */
+function isu_social_blocks_mobile() {
+  $output = l('', 'http://itunes.apple.com/us/app/isu-mobile/id554731012?ls=1&mt=8', array('absolute' => TRUE, 'attributes' => array('class' => 'isu-mobile-appstore', 'title' => t('App Store'))));
+  $output .= l('', 'http://play.google.com/store/apps/details?id=edu.indstate.indstatemobile', array('absolute' => TRUE, 'attributes' => array('class' => 'isu-mobile-googleplay', 'title' => t('Google Play'))));
+
+  return $output;
+}
