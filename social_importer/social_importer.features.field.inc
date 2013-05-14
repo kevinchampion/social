@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * isu_social_importer.features.field.inc
+ * social_importer.features.field.inc
  */
 
 /**
  * Implements hook_field_default_fields().
  */
-function isu_social_importer_field_default_fields() {
+function social_importer_field_default_fields() {
   $fields = array();
 
   // Exported field: 'social-facebook-field_fb_comments'.

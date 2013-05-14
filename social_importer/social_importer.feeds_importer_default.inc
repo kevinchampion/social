@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * isu_social_importer.feeds_importer_default.inc
+ * social_importer.feeds_importer_default.inc
  */
 
 /**
  * Implements hook_feeds_importer_default().
  */
-function isu_social_importer_feeds_importer_default() {
+function social_importer_feeds_importer_default() {
   $export = array();
 
   $feeds_importer = new stdClass();

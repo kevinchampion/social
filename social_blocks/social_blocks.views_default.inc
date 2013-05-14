@@ -1,17 +1,17 @@
 <?php
 /**
  * @file
- * isu_social_blocks.views_default.inc
+ * social_blocks.views_default.inc
  */
 
 /**
  * Implements hook_views_default_views().
  */
-function isu_social_blocks_views_default_views() {
+function social_blocks_views_default_views() {
   $export = array();
 
   $view = new view();
-  $view->name = 'isu_social';
+  $view->name = 'social';
   $view->description = 'Contains blocks with most recent item from each social media source';
   $view->tag = 'default';
   $view->base_table = 'social';
@@ -558,7 +558,7 @@ function isu_social_blocks_views_default_views() {
       'label' => 'Field: Topic/s (field_tags)',
     ),
   );
-  $export['isu_social'] = $view;
+  $export['social'] = $view;
 
   return $export;
 }

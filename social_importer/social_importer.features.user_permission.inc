@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * isu_social_importer.features.user_permission.inc
+ * social_importer.features.user_permission.inc
  */
 
 /**
  * Implements hook_user_default_permissions().
  */
-function isu_social_importer_user_default_permissions() {
+function social_importer_user_default_permissions() {
   $permissions = array();
 
   // Exported permission: access own authorizations.

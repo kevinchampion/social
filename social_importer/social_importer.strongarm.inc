@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * isu_social_importer.strongarm.inc
+ * social_importer.strongarm.inc
  */
 
 /**
  * Implements hook_strongarm().
  */
-function isu_social_importer_strongarm() {
+function social_importer_strongarm() {
   $export = array();
 
   $strongarm = new stdClass();

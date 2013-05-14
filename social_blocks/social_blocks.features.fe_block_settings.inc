@@ -1,22 +1,22 @@
 <?php
 /**
  * @file
- * isu_social_blocks.features.fe_block_settings.inc
+ * social_blocks.features.fe_block_settings.inc
  */
 
 /**
  * Implements hook_default_fe_block_settings().
  */
-function isu_social_blocks_default_fe_block_settings() {
+function social_blocks_default_fe_block_settings() {
   $export = array();
 
   $export['version'] = '2.0';
 
-  $export['isu_social_blocks-isu-mobile'] = array(
+  $export['social_blocks-isu-mobile'] = array(
     'cache' => '1',
     'custom' => '0',
     'delta' => 'isu-mobile',
-    'module' => 'isu_social_blocks',
+    'module' => 'social_blocks',
     'node_types' => array(),
     'pages' => '',
     'roles' => array(),
@@ -32,11 +32,11 @@ function isu_social_blocks_default_fe_block_settings() {
     'visibility' => '0',
   );
 
-  $export['isu_social_blocks-social-links'] = array(
+  $export['social_blocks-social-links'] = array(
     'cache' => '1',
     'custom' => '0',
     'delta' => 'social-links',
-    'module' => 'isu_social_blocks',
+    'module' => 'social_blocks',
     'node_types' => array(),
     'pages' => '',
     'roles' => array(),
