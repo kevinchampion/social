@@ -1,7 +1,7 @@
 name = YouTube import
 description = Creates YouTube fetcher and parser for storing social media content from a YouTube feed.
 core = 7.x
-package = Social Media
+package = Social
 
 dependencies[] = feeds
 dependencies[] = feeds_jsonpath_parser
