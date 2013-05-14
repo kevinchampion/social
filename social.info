@@ -1,5 +1,5 @@
-name = Social Media entities
-description = Creates social media entities for storing social media content.
+name = Social entities
+description = Creates social entities for storing social media content.
 core = 7.x
 package = Social Media
 
