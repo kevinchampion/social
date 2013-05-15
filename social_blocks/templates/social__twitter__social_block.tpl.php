@@ -30,12 +30,18 @@
  */
 ?>
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
+  <div class="twitter-logo">
+    <a href="<?php print $twitter_user_url; ?>"><img width="50" height="50" src="<?php print $twitter_logo_path; ?>" /></a>
+  </div>
   <div class="content"<?php print $content_attributes; ?>>
-    <div class="twitter-logo">
-      <a href="<?php print $twitter_user_url; ?>"><img width="50" height="50" src="<?php print $twitter_logo_path; ?>" /></a>
+    <div class="twitter-user">
+      <a href="<?php print $twitter_user_url; ?>">
+        <img src="<?php print $twitter_profile_image_url; ?>" />
+      </a>
     </div>
     <?php
       print render($content);
     ?>
+    <div class="clearfix"></div>
   </div>
 </div>

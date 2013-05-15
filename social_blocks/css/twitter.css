@@ -1,0 +1,45 @@
+/**
+ * @file Styling for Twitter blocks
+ */
+
+.social-twitter {
+  width:520px;
+  margin:25px auto;
+}
+.social-twitter .twitter-logo {
+  background: #eee;
+  height: 20px;
+  margin-bottom: 10px;
+}
+.social-twitter .twitter-logo img {
+  position: relative;
+  left: 45%;
+  top: -26px;
+}
+.social-twitter .content {
+  box-shadow: 0px 0px 7px #CCC;
+  padding: 13px 15px;
+  width: 486px;
+  margin-left: 2px;
+}
+.social-twitter .twitter-user {
+  margin-right:10px;
+  float:left;
+}
+.social-twitter .field-type-text-long {
+  font-size: 130%;
+  float: left;
+  width: 87%;
+  margin-top: -5px;
+}
+.social-twitter .field-type-datestamp {
+  font-size: 85%;
+  color: #BBB;
+  float: right;
+  margin-right: 5px;
+  font-style: italic;
+}
+.social-twitter .field-type-datestamp:after {
+  content:" ";
+  border-top:1px solid #CCC;
+}

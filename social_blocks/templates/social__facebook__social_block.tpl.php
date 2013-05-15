@@ -30,10 +30,10 @@
  */
 ?>
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
+  <div class="facebook-logo">
+    <a href="<?php print $facebook_user_url; ?>"><img src="<?php print $facebook_logo_path; ?>" /></a>
+  </div>
   <div class="content"<?php print $content_attributes; ?>>
-    <div class="facebook-logo">
-      <a href="<?php print $facebook_user_url; ?>"><img width="50" height="50" src="<?php print $facebook_logo_path; ?>" /></a>
-    </div>
     <?php
       print render($content);
       print $like_button;

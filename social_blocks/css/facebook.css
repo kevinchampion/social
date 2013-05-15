@@ -1,0 +1,47 @@
+/**
+ * @file Styling for Facebook blocks
+ */
+
+.social-facebook {
+  width:520px;
+  margin:20px auto;
+}
+.social-facebook .facebook-logo {
+  background: #eee;
+  height: 20px;
+  margin-bottom: 10px;
+}
+.social-facebook .facebook-logo img {
+  position: relative;
+  left: 245px;
+  top: -16px;
+  width:30px;
+  height:30px;
+}
+.social-facebook .content {
+  box-shadow: 0px 0px 7px #CCC;
+  padding: 13px 15px;
+  width: 486px;
+  margin-left: 2px;
+}
+.social-facebook .facebook-user {
+  margin-right:10px;
+  float:left;
+}
+.social-facebook .field-type-text-long {
+  font-size: 130%;
+  float: left;
+  width: 87%;
+  margin-top: -5px;
+}
+.social-facebook .field-type-datestamp {
+  font-size: 85%;
+  color: #BBB;
+  float: right;
+  margin-right: 5px;
+  font-style: italic;
+}
+.social-facebook .field-type-datestamp:after {
+  content:" ";
+  border-top:1px solid #CCC;
+}

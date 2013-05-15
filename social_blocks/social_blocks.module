@@ -46,13 +46,15 @@ function social_blocks_preprocess_social(&$variables) {
 
   global $base_path;
 
-  $path = drupal_get_path('module', 'social_blocks');
+  $path = drupal_get_path('module', 'isu_social_blocks');
 
   if($variables['view_mode'] == 'social_block') {
 
     switch ($variables['social']->social_type) {
 
       case 'facebook':
+
+        drupal_add_css($path . '/css/facebook.css');
 
         $variables['facebook_user_url'] = $variables['social']->field_fb_page_username[$variables['social']->language][0]['value'];
         $variables['facebook_logo_path'] = $base_path . $path . '/images/f_logo@2x.png';
@@ -81,9 +83,11 @@ function social_blocks_preprocess_social(&$variables) {
 
       case 'twitter':
 
+        drupal_add_css($path . '/css/twitter.css');
+
         module_load_include('inc', 'twitter', 'twitter');
 
-        $twitter_user = twitter_account_load('indianastate');
+        $twitter_user = twitter_account_load('imagex_media');
 
         $variables['twitter_name'] = $twitter_user->name;
         $variables['twitter_screen_name'] = $twitter_user->screen_name;
