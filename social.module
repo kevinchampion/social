@@ -266,14 +266,25 @@ function social_access($op, $social = NULL, $account = NULL) {
   if (user_access('administer socials', $account)) {
     return TRUE;
   }
-  if (isset($social) && $social_type = $social->type) {
+
+  if (isset($social)) {
+
+    // If $social isn't an object, it's the string name of the social type. If
+    // it's an object then the social type of the object needs to be
+    // retrieved in order to construct the permission string.
+    if (is_object($social)) {
+      $social = $social->type;
+    }
+
     $op = ($op == 'view') ? 'view' : 'edit';
-    if (user_access("$op any $social_type social", $account)) {
+    if (user_access("$op any $social social", $account)) {
       return TRUE;
     }
+
   }
+
   return FALSE;
-  // return TRUE;
+
 }
 
 /**

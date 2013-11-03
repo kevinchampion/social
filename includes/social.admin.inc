@@ -69,7 +69,7 @@ class SocialUIController extends EntityDefaultUIController {
         'page callback' => 'social_form_wrapper',
         'page arguments' => array(social_create(array('social_type' => $type->type))),
         'access callback' => 'social_access',
-        'access arguments' => array('edit', 'edit ' . $type->type),
+        'access arguments' => array('edit', $type->type),
         'file' => 'social.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
       );
@@ -78,7 +78,7 @@ class SocialUIController extends EntityDefaultUIController {
         'page callback' => 'social_form_wrapper',
         'page arguments' => array(social_create(array('social_type' => $type->type))),
         'access callback' => 'social_access',
-        'access arguments' => array('edit', 'edit ' . $type->type),
+        'access arguments' => array('edit', $type->type),
         'file' => 'social.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
       );
