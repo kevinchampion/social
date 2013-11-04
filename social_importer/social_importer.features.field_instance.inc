@@ -706,52 +706,6 @@ function social_importer_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'social-facebook-field_tags'
-  $field_instances['social-facebook-field_tags'] = array(
-    'bundle' => 'facebook',
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => 'Apply topics so that this social item can be linked with other content tagged with the same topic in the site.',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'taxonomy',
-        'settings' => array(),
-        'type' => 'taxonomy_term_reference_link',
-        'weight' => 15,
-      ),
-      'ical' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'social_block' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'social',
-    'field_name' => 'field_tags',
-    'label' => 'Topics',
-    'required' => 0,
-    'settings' => array(
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 0,
-      'module' => 'options',
-      'settings' => array(
-        'autocomplete_path' => 'taxonomy/autocomplete',
-        'size' => 60,
-      ),
-      'type' => 'options_select',
-      'weight' => 14,
-    ),
-  );
-
   // Exported field_instance: 'social-instagram-field_instagram_caption'
   $field_instances['social-instagram-field_instagram_caption'] = array(
     'bundle' => 'instagram',
@@ -1285,49 +1239,6 @@ function social_importer_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'social-instagram-field_tags'
-  $field_instances['social-instagram-field_tags'] = array(
-    'bundle' => 'instagram',
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => 'Apply topics so that this social item can be linked with other content tagged with the same topic in the site.',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'taxonomy',
-        'settings' => array(),
-        'type' => 'taxonomy_term_reference_link',
-        'weight' => 10,
-      ),
-      'ical' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'social_block' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'social',
-    'field_name' => 'field_tags',
-    'label' => 'Topics',
-    'required' => 0,
-    'settings' => array(
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 1,
-      'module' => 'options',
-      'settings' => array(),
-      'type' => 'options_select',
-      'weight' => 12,
-    ),
-  );
-
   // Exported field_instance: 'social-pinterest-field_pin_account_link'
   $field_instances['social-pinterest-field_pin_account_link'] = array(
     'bundle' => 'pinterest',
@@ -1723,92 +1634,6 @@ function social_importer_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'social-pinterest-field_tags'
-  $field_instances['social-pinterest-field_tags'] = array(
-    'bundle' => 'pinterest',
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => 'Apply topics so that this social item can be linked with other content tagged with the same topic in the site.',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'taxonomy',
-        'settings' => array(),
-        'type' => 'taxonomy_term_reference_link',
-        'weight' => 7,
-      ),
-      'ical' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'social_block' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'social',
-    'field_name' => 'field_tags',
-    'label' => 'Topics',
-    'required' => 0,
-    'settings' => array(
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 1,
-      'module' => 'options',
-      'settings' => array(),
-      'type' => 'options_select',
-      'weight' => 9,
-    ),
-  );
-
-  // Exported field_instance: 'social-twitter-field_tags'
-  $field_instances['social-twitter-field_tags'] = array(
-    'bundle' => 'twitter',
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => 'Apply topics so that this social item can be linked with other content tagged with the same topic in the site.',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'taxonomy',
-        'settings' => array(),
-        'type' => 'taxonomy_term_reference_link',
-        'weight' => 4,
-      ),
-      'ical' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'social_block' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'social',
-    'field_name' => 'field_tags',
-    'label' => 'Topics',
-    'required' => 0,
-    'settings' => array(
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 1,
-      'module' => 'options',
-      'settings' => array(),
-      'type' => 'options_select',
-      'weight' => 6,
-    ),
-  );
-
   // Exported field_instance: 'social-twitter-field_tw_created'
   $field_instances['social-twitter-field_tw_created'] = array(
     'bundle' => 'twitter',
@@ -2043,52 +1868,6 @@ function social_importer_field_default_field_instances() {
       ),
       'type' => 'text_textarea',
       'weight' => 1,
-    ),
-  );
-
-  // Exported field_instance: 'social-youtube-field_tags'
-  $field_instances['social-youtube-field_tags'] = array(
-    'bundle' => 'youtube',
-    'default_value' => NULL,
-    'deleted' => 0,
-    'description' => 'Apply topics so that this social item can be linked with other content tagged with the same topic in the site.',
-    'display' => array(
-      'default' => array(
-        'label' => 'above',
-        'module' => 'taxonomy',
-        'settings' => array(),
-        'type' => 'taxonomy_term_reference_link',
-        'weight' => 10,
-      ),
-      'ical' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-      'social_block' => array(
-        'label' => 'above',
-        'settings' => array(),
-        'type' => 'hidden',
-        'weight' => 0,
-      ),
-    ),
-    'entity_type' => 'social',
-    'field_name' => 'field_tags',
-    'label' => 'Topics',
-    'required' => 0,
-    'settings' => array(
-      'user_register_form' => FALSE,
-    ),
-    'widget' => array(
-      'active' => 0,
-      'module' => 'options',
-      'settings' => array(
-        'autocomplete_path' => 'taxonomy/autocomplete',
-        'size' => 60,
-      ),
-      'type' => 'options_select',
-      'weight' => 12,
     ),
   );
 
@@ -2797,7 +2576,6 @@ function social_importer_field_default_field_instances() {
   t('Account link');
   t('Actual YouTube video file entity.');
   t('Actual textual tweet message.');
-  t('Apply topics so that this social item can be linked with other content tagged with the same topic in the site.');
   t('Author');
   t('Caption');
   t('Comments');
@@ -2858,7 +2636,6 @@ function social_importer_field_default_field_instances() {
   t('Timestamp Instagram item was created.');
   t('Title');
   t('Title of the YouTube video.');
-  t('Topics');
   t('Tweet');
   t('Type');
   t('Updated');
