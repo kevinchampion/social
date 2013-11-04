@@ -89,7 +89,7 @@ function social_entity_info() {
     'base table' => 'social',
     'revision table' => 'social_revision',
     'label callback' => 'entity_class_label',
-    'uri callback' => 'social_uri',
+    'uri callback' => 'entity_class_uri',
     'creation callback' => 'social_create',
     'access callback' => 'social_access',
     'module' => 'social',
@@ -360,15 +360,6 @@ function social_load_multiple($smids = FALSE, $conditions = array(), $reset = FA
 }
 
 /**
- * URI callback for socials
- */
-function social_uri($social){
-  return array(
-    'path' => 'social/' . $social->smid,
-  );
-}
-
-/**
  * Provides a list of existing entities and the ability to add more. Tabs
  * provide field and display management.
  */
@@ -491,6 +482,7 @@ function social_view($entity, $view_mode = 'default') {
   // Now invoke hook_entity_view_alter().
   drupal_alter(array('social_view', 'entity_view'),
     $entity->content, $entity_type);
+  dpm(entity_label('social', $entity));
 
   // And finally return the content.
   return $entity->content;
@@ -638,7 +630,6 @@ function social_create($values = array()) {
  * We save the entity by calling the controller.
  */
 function social_save(&$entity) {
-  // dpm($entity);
   return entity_get_controller('social')->save($entity);
 }
 
@@ -690,6 +681,7 @@ function social_menu_local_tasks_alter(&$data, $router_item, $root_path) {
  * @see social.tpl.php
  */
 function template_preprocess_social(&$variables) {
+
   $variables['view_mode'] = $variables['elements']['#view_mode'];
   $entity_type = $variables['elements']['#entity_type'];
   $variables['entity_type'] = $entity_type;
@@ -740,6 +732,7 @@ function template_preprocess_social(&$variables) {
   if ($id = entity_id($entity_type, $entity)) {
     $variables['theme_hook_suggestions'][] = $entity_type . '__' . $id;
   }
+
 }
 
 
@@ -752,10 +745,24 @@ class Social extends Entity {
     parent::__construct($values, 'social');
   }
 
-  /*protected function defaultLabel() {
-    return;
-  }*/
+  /**
+   * Defines the entity label if the 'entity_class_label' callback is used.
+   *
+   * Specify 'entity_class_label' as 'label callback' in hook_entity_info() to
+   * let the entity label point to this method. By overriding this we can
+   * implement a custom default label.
+   */
+  protected function defaultLabel() {
+    // Add in the translated specified label property.
+    $iid = $this->getTranslation($this->entityInfo['entity keys']['label']);
+    $bundle = $this->getTranslation($this->entityInfo['entity keys']['bundle']);
+    return $bundle . ": " . $iid;
+  }
 
+  /**
+   * By overriding this, we're able to specify 'entity_class_uri' as
+   * 'uri callback' hook_entity_info().
+   */
   protected function defaultUri() {
     return array('path' => 'social/' . $this->smid);
   }
